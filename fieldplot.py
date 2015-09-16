@@ -6,12 +6,14 @@ from numpy import *
 import readfielddump as rfd
 import matplotlib.pyplot as plt
 import matplotlib
+import matplotlib.patches as patches
 from datetime import *
-import readnamoptions as rno
 import os.path
 import os
 
-def simplefieldplot(X,Y,Z,exptitle='',expnr='',prop='',N = 300,plot_title=0,xlabel = 'x', ylabel = 'y', optinfo = 0, optitle = '',turbine=False):
+def simplefieldplot(X,Y,Z,exptitle='',expnr='',prop='',N = 300,
+                    plot_title=0,xlabel ='x',ylabel ='y',optinfo=0,optitle='',nchartitle=-1,
+                    turbine=False,turxlow=0,turzlow=0,width=0,height=0):
 
     tdy = datetime.today()
     
@@ -28,7 +30,8 @@ def simplefieldplot(X,Y,Z,exptitle='',expnr='',prop='',N = 300,plot_title=0,xlab
         'weight' : 'medium',
         'size'   : 12}
     matplotlib.rc('font', **font)
-
+    
+    print 'Plotting contours'
     plt.contourf(X,Y,Z,N) #filled contours 
     plt.contour(X,Y,Z,N) #contour lines
     plt.xlabel(xlabel)
@@ -36,24 +39,23 @@ def simplefieldplot(X,Y,Z,exptitle='',expnr='',prop='',N = 300,plot_title=0,xlab
     plt.colorbar()
 
     if turbine == True: #plot turbine
-        namopt = rno.readnamoptions(exptitle,expnr)
-        turbh = namopt['turbh']
-        turbr = namopt['turbr']
-        turbloc = namopt['turbloc']
-        plt.plot([turbloc,turbloc],[turbh-turbr,turbh+turbr],color='0.85',lw=1)
+        print 'Plotting wind turbine. Note: assumed equidistant grid!'
+
+        plt.gca().add_patch(patches.Rectangle((turxlow,turzlow),width,height,facecolor='k',zorder=10))
 
     if plot_title != 0:
-        plt.title(plot_title)
+        plt.title(plot_title + ' \#%s: field plot of %s ' % (expnr, prop) + optitle)
     else:
-        plt.title('%s \#%s: field plot of %s ' %  (exptitle,expnr,prop)+ optitle )
-
+        plt.title('%s \#%s: field plot of %s ' %  (exptitle[0:nchartitle],expnr,prop)+ optitle )
+    
+    print 'Saving figure'
     plt.savefig(figurepath,bbox_inches='tight')
     
     if optinfo != 0:
         with open(optfilepath, 'w') as opt:
             opt.write(optinfo)
 
-def lineplot(X,Y,exptitle='',expnr='',prop='',project = 'les_data_analysis',plot_title=0,xlabel = 'x', ylabel = 'y', optinfo = 0, optitle = ''):
+def lineplot(X,Y,exptitle='',expnr='',prop='',project = 'les_data_analysis',plot_title=0,xlabel = 'x', ylabel = 'y', optinfo = 0, optitle = '',nchartitle=-1):
 
     tdy = datetime.today()
     
@@ -78,7 +80,7 @@ def lineplot(X,Y,exptitle='',expnr='',prop='',project = 'les_data_analysis',plot
     if plot_title != 0:
         plt.title(plot_title)
     else:
-        plt.title('%s \#%s: line plot of %s ' %  (exptitle,expnr,prop)+ optitle )
+        plt.title('%s \#%s: line plot of %s ' %  (exptitle[0:nchartitle],expnr,prop)+ optitle )
 
     plt.savefig(figurepath,bbox_inches='tight')
     

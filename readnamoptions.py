@@ -35,15 +35,17 @@ def readnamoptions(exptitle,expnr):
             cu = float(namopt[i].rstrip()[namopt[i].index('=')+1:]) 
         if namopt[i].find('cv')!=-1:
             cv = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
-        if namopt[i].find('turbh')!=-1:
-            turbh = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
-        if namopt[i].find('turbr')!=-1:
-            turbr = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
-        if namopt[i].find('turbloc')!=-1:
-            turbloc = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
+        if namopt[i].find('turhx')!=-1:
+            turhx = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
+        if namopt[i].find('turhy')!=-1:
+            turhy = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
+        if namopt[i].find('turhz')!=-1:
+            turhz = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
+        if namopt[i].find('turr')!=-1:
+            turr = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
         if namopt[i].find('Ct')!=-1:
             Ct = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
 
         
-    return {'nprocx': nprocx, 'nprocy': nprocy, 'runtime': runtime, 'dtav': dtav, 'itot': itot, 'jtot': jtot, 'kmax': kmax, 'xsize': xsize, 'ysize': ysize, 'cu': cu, 'cv': cv, 'turbh': turbh, 'turbr': turbr, 'turbloc': turbloc, 'Ct': Ct}
+    return {'nprocx': nprocx, 'nprocy': nprocy, 'runtime': runtime, 'dtav': dtav, 'itot': itot, 'jtot': jtot, 'kmax': kmax, 'xsize': xsize, 'ysize': ysize, 'cu': cu, 'cv': cv, 'turhx': turhx, 'turhy': turhy, 'turhz': turhz, 'turr': turr, 'Ct': Ct}
 

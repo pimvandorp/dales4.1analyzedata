@@ -16,11 +16,13 @@ def readfielddump(exptitle, expnr,prop):
     namopt = rno.readnamoptions(exptitle,expnr)
 
 ###################### extract time array ###################### 
+    print 'Extracting time array'
     f = pu.netcdf_file(expdir + '/fielddump.000.000.%s.nc' % (expnr))
 
     t = f.variables['time'][:]
 
 ###################### make position arrays ###################### 
+    print 'Extracting position array\'s'
     zt = f.variables['zt'][:]
 
     jtot = namopt['jtot']
@@ -36,6 +38,7 @@ def readfielddump(exptitle, expnr,prop):
         xm = append(xm,i*float(xsize)/itot)
 
 ###################### extract property array ###################### 
+
     nx = 0
     procx = True
   
@@ -58,7 +61,8 @@ def readfielddump(exptitle, expnr,prop):
 
 
     print 'nprocx = ', nx, ' and nprocy = ', ny
-
+    
+    print 'Start extraction of property array'
     for i in range(0,nx):
         ii = str(i).rjust(3,'0')
         for j in range(0,ny):
@@ -74,8 +78,10 @@ def readfielddump(exptitle, expnr,prop):
             pp  = p
         else:
             pp  = append(pp, p, axis=3)
-    
+    print 'Finished extraction of property array'
     return {prop: pp, 'x': xm, 'y': yt, 'z': zt, 't': t, 'nprocx': nx, 'nprocy': ny}
+
+
 
 
 
