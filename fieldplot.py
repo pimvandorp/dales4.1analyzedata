@@ -2,18 +2,17 @@
 #Filename: fieldplot.py
 #Description: simple fieldplotter
 
-from numpy import *
+import numpy as np
 import readfielddump as rfd
 import matplotlib.pyplot as plt
-import matplotlib
+import matplotlib as mpl
 import matplotlib.patches as patches
 from datetime import *
 import os.path
 import os
 
-def simplefieldplot(X,Y,Z,exptitle='',expnr='',prop='',N = 300,
-                    plot_title=0,xlabel ='x',ylabel ='y',optinfo=0,optitle='',nchartitle=-1,
-                    turbine=False,turxlow=0,turzlow=0,width=0,height=0,username='pim'):
+def simplefieldplot(X,Y,Z,exptitle='',expnr='',prop='',N = 200,
+                    plot_title=0,xlabel ='x',ylabel ='y',filetype='pdf',width=0,height=0,username='pim',colorbar=True,usr_size=False,figwidth=2.7,figheight=2.7,aspectratio=1):
 
     tdy = datetime.today()
     
@@ -22,51 +21,44 @@ def simplefieldplot(X,Y,Z,exptitle='',expnr='',prop='',N = 300,
     if not os.path.isdir(figuredir):
         os.makedirs(figuredir)
     
-    filename = '%s_%s_%s_%s_%s_%s' % (exptitle, expnr, prop, xlabel, ylabel, tdy.strftime('%d%m_%H%M%S'))
-    figurepath = figuredir + '/%s.pdf' % (filename)
+    filename = '%s_%s_%s_%s' % (exptitle, expnr, prop, tdy.strftime('%d%m_%H%M%S'))
+    figurepath = figuredir + '/%s.%s' % (filename,filetype)
     optfilepath = figuredir + '/%s.txt' % (filename)
-
-    datadir = '/home/%s/figures/%s' % (username,exptitle)
-
-    if not os.path.isdir(datadir):
-        os.makedirs(datadir)
-
-    datafilename = '%s_%s_%s_%s_%s_%s_DATA' % (exptitle, expnr, prop, xlabel, ylabel, tdy.strftime('%d%m_%H%M%S'))
-    datapath = datadir + '/%s.txt' % (datafilename)
-
-    savetxt(datapath,Z,fmt='%5.1d')
 
     font = {'family' : 'computer modern',
         'weight' : 'medium',
-        'size'   : 12}
-    matplotlib.rc('font', **font)
+        'size'   : 10}
+    mpl.rc('font', **font)
+
+    fig,ax = plt.subplots()
     
+    ax.set_aspect(aspectratio)
+    if usr_size == True:
+        fig.set_size_inches(figwidth,figheight)
+
     print 'Plotting contours'
-    plt.contourf(X,Y,Z,N) #filled contours 
-    #plt.contour(X,Y,Z,N) #contour lines
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.colorbar()
-
-    if turbine == True: #plot turbine
-        print 'Plotting wind turbine. Note: assumed equidistant grid!'
-
-        plt.gca().add_patch(patches.Rectangle((turxlow,turzlow),width,height,facecolor='k',zorder=10))
+    cax = ax.contourf(X,Y,Z,N,rasterized=True) 
+    ax.contour(X,Y,Z,N,rasterized=True) 
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    if (colorbar==True):
+        #colorbar setting for one large plot:
+        #cbaxes = fig.add_axes([0.8,0.2,0.03,0.3])
+        #cbar = fig.colorbar(cax,ticks=[0,np.amax(Z)],cax=cbaxes,orientation='vertical')
+        cbar = fig.colorbar(cax,ticks=[np.amin(Z),np.amax(Z)],fraction=0.036, pad=0.04,orientation='vertical')
+        #cbar.ax.set_yticklabels(['$%s$' % round(np.amin(Z),1), '$1.0$'])
+        #colorbar settings for three small plots next to each other:
+        #cbaxes = fig.add_axes([0.2,1.0,0.6,0.03])
+        #cbar = fig.colorbar(cax,ticks=[np.amin(Z),np.amax(Z)],cax=cbaxes,orientation='horizontal')
 
     if plot_title != 0:
-        plt.title(plot_title + ' \#%s: field plot of %s ' % (expnr, prop) + optitle)
-    else:
-        plt.title('%s \#%s: field plot of %s ' %  (exptitle[0:nchartitle],expnr,prop)+ optitle )
+        ax.set_title(plot_title)
     
     print 'Saving figure'
-    plt.gca().set_aspect('equal')
-    plt.savefig(figurepath,bbox_inches='tight')
+    fig.savefig(figurepath,bbox_inches='tight',dpi=300,format='%s' % filetype)
     
-    if optinfo != 0:
-        with open(optfilepath, 'w') as opt:
-            opt.write(optinfo)
 
-def lineplot(X,Y,exptitle='',expnr='',prop='',project = 'les_data_analysis',plot_title=0,xlabel = 'x', ylabel = 'y', optinfo = 0, optitle = '',nchartitle=-1,username='pim'):
+def lineplot(X,Y,exptitle='',expnr='',prop='',plot_title=0,xlabel = 'x', ylabel = 'y', username='pim'):
 
     tdy = datetime.today()
     
@@ -77,12 +69,11 @@ def lineplot(X,Y,exptitle='',expnr='',prop='',project = 'les_data_analysis',plot
     
     filename = '%s_%s_%s_%s' % (exptitle, expnr, prop, tdy.strftime('%d%m_%H%M%S'))
     figurepath = figuredir + '/%s.pdf' % (filename)
-    optfilepath = figuredir + '/%s.txt' % (filename)
 
     font = {'family' : 'computer modern',
         'weight' : 'medium',
         'size'   : 12}
-    matplotlib.rc('font', **font)
+    mpl.rc('font', **font)
     
     plt.plot(X,Y)
     plt.xlabel(xlabel)
@@ -90,14 +81,9 @@ def lineplot(X,Y,exptitle='',expnr='',prop='',project = 'les_data_analysis',plot
     
     if plot_title != 0:
         plt.title(plot_title)
-    else:
-        plt.title('%s \#%s: line plot of %s ' %  (exptitle[0:nchartitle],expnr,prop)+ optitle )
 
     plt.savefig(figurepath,bbox_inches='tight')
     
-    if optinfo != 0:
-        with open(optfilepath, 'w') as opt:
-            opt.write(optinfo)
     plt.close()
 
 

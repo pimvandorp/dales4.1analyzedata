@@ -4,39 +4,34 @@
 
 from numpy import *
 
-def readnamoptions(exptitle,expnr,username='pim'):
+def readnamoptions(exptitle,expnr,username='pim',turbine=True):
 
     expsdir = '/home/%s/Les/Experiments' % (username)
     expdir = expsdir + '/%s/%s' %(exptitle,expnr)
   
+    #Read windturbinemonitor
     with open(expdir + '/windturbinemonitor.%s' % expnr, 'r') as wtdata:
+        header = 5
         for i, line in enumerate(wtdata):
-            if i in range(0, 12):
-                if i==6:
+            if i in range(header,header+12):
+                if i==header+1:
                     size = line.split()
                     xsize = float(size[4])
                     ysize = float(size[5])
                     zsize = float(size[6])
-                if i==7:
+                if i==header+2:
                     grid = line.split()
                     dx = float(grid[4])
                     dy = float(grid[5])
                     dz = float(grid[6])
-                if i==10:
-                    turhxyz = line.split()
-                    turhx = float(turhxyz[5])
-                    turhy = float(turhxyz[6])
-                    turhz = float(turhxyz[7])
 
 
+    #Read namoptions
     with open(expdir + '/namoptions', 'r') as namopt:
         namopt = list(namopt)
 
     for i in range(len(namopt)):
-        if namopt[i].find('nprocx')!=-1:
-            nprocx = int(namopt[i].rstrip()[namopt[i].index('=')+1:])
-        if namopt[i].find('nprocy')!=-1:
-            nprocy = int(namopt[i].rstrip()[namopt[i].index('=')+1:])
+
         if namopt[i].find('runtime')!=-1:
             runtime = int(namopt[i].rstrip()[namopt[i].index('=')+1:])
         if namopt[i].find('dtav')!=-1:
@@ -51,13 +46,24 @@ def readnamoptions(exptitle,expnr,username='pim'):
             cu = float(namopt[i].rstrip()[namopt[i].index('=')+1:]) 
         if namopt[i].find('cv')!=-1:
             cv = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
-        if namopt[i].find('turr')!=-1:
-            turr = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
-        if namopt[i].find('Ct')!=-1:
-            Ct = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
+        if turbine:
+            if namopt[i].find('ntur')!=-1:
+                ntur = int(namopt[i].rstrip()[namopt[i].index('=')+1:])
+            if namopt[i].find('tura')!=-1:
+                tura = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
+        else:
+            ntur = 0
+            tura = 0
+
+    #Read windfarmdata.inp
+    windfarmdata = zeros((ntur+1,12))
+    windfarmdata[:-1,:] = loadtxt(expdir + '/windfarmdata.inp.%s' % expnr,skiprows=1)
+    turid = windfarmdata[:,0] 
+    turhx = windfarmdata[:,1] 
+    turhy = windfarmdata[:,2] 
+    turhz = windfarmdata[:,3] 
+    turr = windfarmdata[:,4] 
 
         
-    return {'nprocx': nprocx, 'nprocy': nprocy, 'runtime': runtime, 'dtav': dtav, 'itot': itot, 'jtot': jtot, 'kmax': kmax, 'xsize': xsize, 'ysize': ysize, 'zsize':zsize,'cu': cu, 'cv': cv, 'turhx': turhx, 'turhy': turhy, 'turhz': turhz, 'turr': turr, 'Ct': Ct, 'dx': dx, 'dy': dy, 'dz': dz}
-
-
+    return {'ntur': ntur, 'runtime': runtime, 'dtav': dtav, 'itot': itot, 'jtot': jtot, 'kmax': kmax, 'xsize': xsize, 'ysize': ysize, 'zsize':zsize,'cu': cu, 'cv': cv, 'dx': dx, 'dy': dy, 'dz': dz, 'tura' : tura, 'turhx': turhx, 'turhy':turhy, 'turhz':turhz,'turr':turr}
 

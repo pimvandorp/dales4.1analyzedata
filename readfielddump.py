@@ -22,31 +22,65 @@ def readtime(exptitle,expnr,username='pim'):
 
     return {'tsteps' : tsteps, 't' : t}  
 
-def readprop(exptitle, expnr,prop,xa,ya,plane,t_start_in,t_end_in,username='pim'):
+def readfull(exptitle, expnr,prop,t_start_in,t_end_in,username='pim'):
     expsdir = '/home/%s/Les/Experiments' % (username)
     expdir = expsdir + '/%s/%s' %(exptitle,expnr)
 
     namopt = rno.readnamoptions(exptitle,expnr)
 
-###################### make position arrays ###################### 
-    print 'Building position array\'s'
-    f = pu.netcdf_file(expdir + '/fielddump.000.000.%s.nc' % (expnr))
-    kmax = namopt['kmax'] 
-    zt = f.variables['zt'][:]
-
-    jtot = namopt['jtot']
-    ysize = namopt['ysize']
-    yt = []
-    for i in range(jtot):
-        yt = append(yt,(i+0.5)*float(ysize)/jtot)
-
     itot = namopt['itot']
-    xsize = namopt['xsize']
-    xm = []
-    for i in range(itot):
-        xm = append(xm,i*float(xsize)/itot)
+    jtot = namopt['jtot']
+    kmax = namopt['kmax'] 
 
-###################### extract property array ###################### 
+    nx = 0
+    procx = True
+  
+    while True:
+        procx = os.path.exists(expdir + '/fielddump.%s.000.%s.nc' % (str(nx).rjust(3,'0'),expnr))
+        if procx == False:
+            break
+        else: 
+            nx = nx +1
+
+    ny = 0
+    procy = True
+  
+    while True:
+        procy = os.path.exists(expdir + '/fielddump.000.%s.%s.nc' % (str(ny).rjust(3,'0'),expnr))
+        if procy == False:
+            break
+        else: 
+            ny = ny +1
+
+    imax = itot/nx
+    jmax = jtot/ny
+    tsteps = t_end_in-t_start_in
+
+    print 'nprocx = ', nx, ' and nprocy = ', ny
+
+    p = zeros((tsteps,kmax,jtot,itot))
+    print 'Start extraction of property array'
+    for i in range(0,nx):
+        ii = str(i).rjust(3,'0')
+        for j in range(0,ny):
+            jj = str(j).rjust(3,'0')
+            
+            f = pu.netcdf_file(expdir + '/fielddump.%s.%s.%s.nc' % (ii,jj,expnr)) 
+            print 'Finished reading from fielddump.%s.%s.%s.nc' % (ii,jj,expnr)
+            p[:,:,(j*jmax):((j+1)*jmax),(i*imax):((i+1)*imax)] = f.variables[prop][t_start_in:t_end_in,:,:,:]
+            print 'Finished writing for myidx, myidy = ', ii, jj
+
+    return {prop: p} 
+
+def readprop(exptitle, expnr,prop,xa,ya,plane,t_start_in,t_end_in,username='pim'):
+    expsdir = '/home/%s/Les/Experiments' % (username)
+    expdir = expsdir + '/%s/%s' %(exptitle,expnr)
+
+    namopt = rno.readnamoptions(exptitle,expnr)
+    
+    itot = namopt['itot']
+    jtot = namopt['jtot']
+    kmax = namopt['kmax'] 
 
     nx = 0
     procx = True
@@ -122,5 +156,5 @@ def readprop(exptitle, expnr,prop,xa,ya,plane,t_start_in,t_end_in,username='pim'
 
     print 'Finished extraction of property array'
 
-    return {prop: p, 'x': xm, 'y': yt, 'z': zt, 'nprocx': nx, 'nprocy': ny}
+    return {prop: p, 'nprocx': nx, 'nprocy': ny}
 
