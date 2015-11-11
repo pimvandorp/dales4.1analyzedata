@@ -1,0 +1,9 @@
+#!/bin/bash
+#$ -q all.q
+#$ -l h_rt=100000
+
+run_dir=$(pwd)
+
+python -u ./readfd_data.py
+
+mv runfd.* $run_dir/outputfiles

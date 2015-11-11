@@ -1,95 +1,171 @@
-#!/usr/bin/python
-# Filename: fielddumpanalysis.py
-# By Pim van Dorp, TU Delft, section Atmospheric Physics, 14 sept 2015
-# Description: Extract, analyze and plot data from DALES' fielddump .nc files 
+#!/usr/bin/python2.7
+# Filename: fielddumpanalysis_2.py
+# By Pim van Dorp, TU Delft, section Atmospheric Physics, 7 nov 2015
+# Description: Extract, analyze and plot data from DALES' fielddump .nc files, in a smart way
 
 #-----------------------------------------------------------------
 #                  0 Import Python packages             
 #-----------------------------------------------------------------
-
 import numpy as np
-import readfielddump as rfd
+import matplotlib.pyplot as plt
+import matplotlib as mpl
 import readnamoptions as rno
-from fieldplot import simplefieldplot
-import sys
-from datetime import *
+from scipy import ndimage
 import os.path
 import os
-from scipy import ndimage
+import datetime as dt
 
+def simplefieldplot(X,Y,Z,exptitle='',expnr='',prop='',N = 200,
+                    plot_title=0,xlabel ='x',ylabel ='y',filetype='pdf',width=0,height=0,username='pim',colorbar=True,usr_size=False,figwidth=2.7,figheight=2.7,aspectratio=1):
+
+    tdy = dt.datetime.today()
+    
+    figuredir = '/home/%s/figures/%s' % (username,exptitle)
+
+    if not os.path.isdir(figuredir):
+        os.makedirs(figuredir)
+    
+    filename = '%s_%s_%s_%s' % (exptitle, expnr, prop, tdy.strftime('%d%m_%H%M%S'))
+    figurepath = figuredir + '/%s.%s' % (filename,filetype)
+    optfilepath = figuredir + '/%s.txt' % (filename)
+
+    font = {'family' : 'computer modern',
+        'weight' : 'medium',
+        'size'   : 10}
+    mpl.rc('font', **font)
+
+    fig,ax = plt.subplots()
+    
+    ax.set_aspect(aspectratio)
+    if usr_size == True:
+        fig.set_size_inches(figwidth,figheight)
+
+    print 'Plotting contours'
+    #minval = round(np.amin(Z),2)
+    #minval = np.amin(Z)
+    #V = np.linspace(minval,1,100)
+    cax = ax.contourf(X,Y,Z,N,rasterized=True) 
+    ax.contour(X,Y,Z,N,rasterized=True) 
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    if (colorbar==True):
+        #colorbar setting for one large plot:
+        #cbaxes = fig.add_axes([0.8,0.2,0.03,0.3])
+        #cbar = fig.colorbar(cax,ticks=[0,np.amax(Z)],cax=cbaxes,orientation='vertical')
+        #cbar = fig.colorbar(cax,ticks=[np.amin(Z),np.amax(Z)],fraction=0.036, pad=0.04,orientation='vertical')
+        #cbar.ax.set_yticklabels(['$%s$' % round(np.amin(Z),1), '$1.0$'])
+        #colorbar settings for three small plots next to each other:
+        #cbaxes = fig.add_axes([0.3,1.10,0.4,0.03])
+        #cbar = fig.colorbar(cax,ticks=[round(np.amin(Z),2),round(np.amax(Z),2)],cax=cbaxes,orientation='horizontal')
+        cbar = fig.colorbar(cax,ticks=[minval,round(1.,1)],pad=0.1,orientation='horizontal')
+
+    if plot_title != 0:
+        ax.set_title(plot_title)
+
+    #ax.set_yticks([-100,0, 100])
+    ax.set_yticks([100, 200])
+    
+    print 'Saving figure'
+    fig.savefig(figurepath,bbox_inches='tight',format='%s' % filetype)
 #-----------------------------------------------------------------
 #                            1  Input            
 #-----------------------------------------------------------------
-
 username = 'pim'
 
 eurocs = False
-gabls = True
+gabls = False
+cbl = True
+nbl = False
 
-expnr = '100'
+expnr = '305'
 
 if gabls:
     exptitle = 'Single_turbine_GABLS'
 if eurocs:
     exptitle = 'Single_turbine_EUROCS'
+if cbl:
+    exptitle = 'Single_turbine_CBL'
+if nbl:
+    exptitle = 'Single_turbine_NBL'
 
-namopt = rno.readnamoptions(exptitle,expnr,username=username)
-runtime = namopt['runtime']
-kmax = namopt['kmax']
-itot = namopt['itot'] 
-jtot = namopt['jtot']
-turhx = namopt['turhx']
-turhy = namopt['turhy']
-turhz = namopt['turhz']
-turr = namopt['turr']
-xsize = namopt['xsize']
-ysize = namopt['ysize']
-zsize = namopt['zsize']
+namopt = rno.readnamoptions(exptitle,expnr,username)
 dy = namopt['dy']
 dx = namopt['dx']
 dz = namopt['dz']
-tura = namopt['tura'] 
-dtav = namopt['dtav'] 
-for i in range(0,len(turhz)):
+xsize = namopt['xsize']
+ysize = namopt['ysize']
+zsize = namopt['zsize']
+turhx = namopt['turhx']
+turhy = namopt['turhy']
+turhz = namopt['turhz']
+ntur = namopt['ntur']
+for i in range(0,ntur):
     turhxgr = int(round(turhx[i]/dx)) 
     turhygr = int(round(turhy[i]/dy)) 
     turhzgr = int(round(turhz[i]/dz)) 
-    turhx[i] = 0.5*dx + dx*(int(round(turhx[i]/dx))-1) 
-    turhy[i] = 0.5*dy + dy*(int(round(turhy[i]/dy))-1) 
-    turhz[i] = 0.5*dz + dz*(int(round(turhz[i]/dz))-1) 
-#-----------------------------------------------------------------
-#                     1.1 Data/range selection           
-#-----------------------------------------------------------------
+    turhx[i] = 0.5*dx + dx*(turhxgr-1) 
+    turhy[i] = 0.5*dy + dy*(turhygr-1) 
+    turhz[i] = 0.5*dz + dz*(turhzgr-1)
 
-prop = 'vhoravg' 
+print 'dx, dy, dz = ', dx, dy, dz
+
+prop = 'vhoravg'
 
 xa = 'x' 
 xa_start = 0
-xa_end = xsize
+xa_end = 2*xsize
 
 ya = 'y'
-ya_start = 0
-ya_end = ysize
+ya_start = 0#turhy[0]-200
+ya_end = 2*ysize#turhy[0]+200
 
 plane = turhz[0]
 print 'Plane at %s' % plane
 
+wakeanalysis = True
+
+plotdata = False
+save = True
+filetype = 'png'
+show = False
+
+rotate = True
+
+halflvlx = False
+halflvly = False
+halflvlz = False
+
 normaxes = False
 normprop = False
-rotate = True
-reshape = False
 
-smart_timeset = True
-time_av = True 
-t_start = 300 
-t_end = runtime
+appenddomain = True
+trans = True
+if cbl:
+    transx = -1000
+    transy = -1000
+else:
+    transx = -100
+    transy = -300
+
+hour = 3600.
+t_start = 2*hour 
+t_end = 3*hour
+dtav = 60.
+if cbl:
+    trange_start = 3*hour
+    trange_end = 6*hour
+else:
+    trange_start = 8*hour
+    trange_end = 11*hour
+
+trange = [int((trange_start)/dtav-1),int((trange_end)/dtav-1)]
 
 #-----------------------------------------------------------------
 #                         1.2 Plot options
 #-----------------------------------------------------------------
-usr_size = False
+usr_size = True
 
-nsubfigures = 3
+nsubfigures = 1
 a4height = 11.7
 a4width = 8.27
 if nsubfigures == 1:
@@ -105,7 +181,6 @@ if usr_size:
 
 colorbar = False
 
-filetype = 'pdf'
 
 #-----------------------------------------------------------------
 #                      2 Read and analyze data
@@ -113,66 +188,30 @@ filetype = 'pdf'
 #-----------------------------------------------------------------
 #                               2.1 Time
 #-----------------------------------------------------------------
-
-if smart_timeset:
-    tin = rfd.readtime(exptitle,expnr,username=username)
-    tsteps = tin['tsteps']
-    t = tin['t']
-
-    t = np.ndarray.tolist(t)
-
-    t_start = dtav*int(round(t_start/dtav))
-    t_end = dtav*int(round(t_end/dtav))
-
-    if t_start > t[-1]:
-        t_start = t[-1]
-    elif t_start < t[0]:
-        t_start = t[0]
-    t_start_in = t.index(t_start)
-
-    if t_end > t[-1]:
-        t_end = t[-1]
-    t_end_in = t.index(t_end)
-else:
-    t_start = dtav*int(round(t_start/dtav))
-    t_end = dtav*int(round(t_end/dtav))
-    t_start_in = t_start/dtav
-    t_end_in = t_end/dtav
-
-if time_av == False:
-    t_end_in = t_start_in + 1
+t_start_in = int(t_start/dtav)
+t_end_in = int(t_end/dtav-1)
 
 print 't_start, t_end = ', t_start, t_end
+print 't_start_in, t_end_in = ', t_start_in, t_end_in
 
 #-----------------------------------------------------------------
-#                      2.1 Position and property
+#                               2.2 Data
 #-----------------------------------------------------------------
-if not (rotate and xa=='x' and ya=='z'):
-    print 'Reading property array'
-    data = rfd.readprop(exptitle,expnr,prop,xa,ya,plane,t_start_in,t_end_in,username=username)
-    p = data[prop] 
-    if prop == 'u' or prop == 'uavg':
-        p = (p/float(1E3))
-    elif prop == 'v' or prop =='vavg': 
-        p = (p/float(1E3))
-    elif prop == 'w' or prop == 'wavg':
-        p = (p/float(1E3))
-    elif prop == 'vhor' or prop == 'vhoravg':
-        p = (p/float(1E3))
-    else:
-        pass
+print 'Loading array from disk'
+datadir = '/home/%s/fd_data/%s' % (username,exptitle)
 
-x = np.arange(0,itot)*dx+0.5*dx #xt
-y = np.arange(0,jtot)*dy+0.5*dy #yt
-z = np.arange(0,kmax)*dz+0.5*dz #zt
+filename = '%s_%s_%s_%s_%s.npy' % (exptitle, expnr, prop,trange[0],trange[1])
+datapath = datadir + '/%s' % (filename)
 
-if normaxes == True:
-    x = x/(2*turr[0])
-    y = y/(2*turr[0])
-    z = z/(2*turr[0])
+pfull = np.load(datapath,mmap_mode='r')
+print 'Calculating time average'
+pfull = np.mean(pfull[t_start_in:t_end_in,:,:,:],axis=0)
+
+if appenddomain:
+    pfull = np.append(pfull,pfull,axis=2)
+    pfull = np.append(pfull,pfull,axis=1)
 
 if rotate:
-    print 'Rotating...'
     expsdir = '/home/%s/Les/Experiments' % (username)
     expdir = expsdir + '/%s/%s' %(exptitle,expnr)
 
@@ -187,94 +226,114 @@ if rotate:
     for i in range(0,ntur):
         winddirinst[i,:] = winddirdata[i::ntur,2] 
         winddiravg[i,:] = winddirdata[i::ntur,3] 
+        if ntur == 1:
+            winddirinst = winddirinst[0,trange[0]:trange[1]]
+            winddiravg = winddiravg[0,trange[0]:trange[1]]
 
-    if xa == 'x' and ya == 'z':
-        datafull = rfd.readfull(exptitle,expnr,prop,t_start_in,t_end_in,username=username) 
-        pfull = datafull[prop] 
-        pfullmax = np.amax(pfull)
-        for i in range(0,np.shape(pfull)[0]):
-            for j in range(0,np.shape(pfull)[1]):
-                pfull[i,j,:,:] = ndimage.interpolation.rotate(pfull[i,j,:,:],(180/3.14)*winddiravg[0,i],reshape=reshape,cval=pfullmax)
+    pshp = np.shape(pfull)
+    pa = turhxgr
+    pb = pshp[2]-turhxgr
+    pe = pshp[2]
+    pc = turhygr
+    pd = pshp[1]-turhygr
+    pf = pshp[1]
 
-        p_tmean = np.mean(pfull[:,:,plane/dy,:],axis=0)/float(1E3)
-    else:
-        pmax = np.amax(p)
-        for i in range(0,np.shape(p)[0]):
-            p[i,:,:] = ndimage.interpolation.rotate(p[i,:,:],(180/3.14)*winddiravg[0,i],reshape=reshape,cval=pmax)
+    print 'Start rotation'
+    angle = (180/3.14)*np.mean(winddiravg[t_start_in:t_end_in])
+    print 'Angle (deg,rad) = ', angle, np.mean(winddiravg[t_start_in:t_end_in])
 
-        print 'Calculating time average'
-        p_tmean = np.mean(p[:,:,:],axis=0)
+    for j in range(0,pshp[0]):
+        pfullpad = np.mean(pfull[j,:,:])*np.ones((2*pf,2*pe))
+        pfullpad[pd:pd+pf,pb:pb+pe] = pfull[j,:,:]
+        pfullpad = ndimage.interpolation.rotate(pfullpad,angle,reshape=False,cval=np.mean(pfull[j,:,:]))
+        pfull[j,:,:] = pfullpad[pd:pd+pf,pb:pb+pe]
 
-else:
-    print 'Calculating time average'
-    p_tmean = np.mean(p[:,:,:],axis=0)
+x = np.arange(0,np.shape(pfull)[2])*dx+0.5*dx #xt
+y = np.arange(0,np.shape(pfull)[1])*dy+0.5*dy #yt
+z = np.arange(0,np.shape(pfull)[0])*dz+0.5*dz #zt
+if halflvlx:
+    x = x - 0.5*dx
+if halflvly:
+    y = y - 0.5*dy
+if halflvlz:
+    z = z - 0.5*dz
 
-if normprop == True:
-    p_tmean = p_tmean/(np.amax(abs(p_tmean)))
+if trans:
+    x = x + transx
+    y = y + transy
 
 #-----------------------------------------------------------------
-#                           4 Plot data
+#                           4 Wake analysis
 #-----------------------------------------------------------------
+if wakeanalysis:
+    Vw_ax = pfull[turhz[0]/dz,turhy[0]/dy,:]
 
-print 'Initializing plot routine'
-if rotate:
-    if xa == 'x' and ya == 'z':
-        if normaxes:
-            xlabel = '$x/D$'
-            ylabel='$z/D$'
-        else:
-            xlabel = '$x$'
-            ylabel='$z$'
-        simplefieldplot(x,z,
-                p_tmean,exptitle,expnr,prop,
-                xlabel=xlabel,ylabel=ylabel,filetype=filetype,colorbar=colorbar,username=username,usr_size=usr_size,figwidth=figwidth,figheight=figheight) 
-    if xa == 'x' and ya == 'y':
-        if normaxes:
-            xlabel = '$x/D$'
-            ylabel='$y/D$'
-        else:
-            xlabel = '$x$'
-            ylabel='$y$'
-        simplefieldplot(x,y,
-                p_tmean,exptitle,expnr,prop,
-                xlabel=xlabel,ylabel=ylabel,filetype=filetype,colorbar=colorbar,username=username,usr_size=usr_size,figwidth=figwidth,figheight=figheight) 
-else:
+    datadir = '/home/%s/dales4.1analyzedata/wakeanalysis/data' % (username)
+
+    if not os.path.isdir(datadir):
+        os.makedirs(datadir)
+    
+    filename = '%s_%s_Vw_ax' % (exptitle, expnr)
+    datapath = datadir + '/%s' % (filename)
+
+    np.save(datapath,Vw_ax)
+
+    filename = '%s_%s_xt' % (exptitle, expnr)
+    datapath = datadir + '/%s' % (filename)
+
+    np.save(datapath,x)
+
+#-----------------------------------------------------------------
+#                            5 Plot data
+#-----------------------------------------------------------------
+if plotdata:
     if xa == 'x' and ya == 'z':
         xa_start = int(round(xa_start/dx))
-        ya_start = int(round(ya_start/dz))
         xa_end = int(round(xa_end/dx))
+        ya_start = int(round(ya_start/dz))
         ya_end = int(round(ya_end/dz))
-        print 'xa_start, xa_end, ya_start, ya_end = ', xa_start, xa_end, ya_start, ya_end
+        if normprop:
+            pfull = pfull/np.amax(pfull[ya_start:ya_end,plane/dy,xa_start:xa_end])
+
         if normaxes:
             xlabel = '$x/D$'
             ylabel='$z/D$'
         else:
             xlabel = '$x$'
             ylabel='$z$'
-        simplefieldplot(x[xa_start:xa_end],z[ya_start:ya_end],
-                p_tmean[ya_start:ya_end,xa_start:xa_end],exptitle,expnr,prop,
-                xlabel=xlabel,ylabel=ylabel,filetype=filetype,colorbar=colorbar,username=username,usr_size=usr_size,figwidth=figwidth,figheight=figheight) 
+        if save:
+            simplefieldplot(x[xa_start:xa_end],z[ya_start:ya_end],
+                    pfull[ya_start:ya_end,plane/dy,xa_start:xa_end],exptitle,expnr,prop,
+                    xlabel=xlabel,ylabel=ylabel,filetype=filetype,colorbar=colorbar,username=username,usr_size=usr_size,figwidth=figwidth,figheight=figheight) 
+        else:
+            plt.contourf(x[xa_start:xa_end],y[ya_start:ya_end],pfull[plane/dz,ya_start:ya_end,xa_start:xa_end],N=200)
+            plt.show()
 
-    if xa == 'x' and ya == 'y':
+    elif xa == 'x' and ya == 'y':
         xa_start = int(round(xa_start/dx))
+        xa_end = int(round(xa_end/dx))
         ya_start = int(round(ya_start/dy))
-        xa_end = int(round(xa_end/dx))
         ya_end = int(round(ya_end/dy))
+
         if normaxes:
             xlabel = '$x/D$'
             ylabel='$y/D$'
         else:
             xlabel = '$x$'
             ylabel='$y$'
-        simplefieldplot(x[xa_start:xa_end],y[ya_start:ya_end],
-                p_tmean[ya_start:ya_end,xa_start:xa_end],exptitle,expnr,prop,
-                xlabel=xlabel,ylabel=ylabel,filetype=filetype,colorbar=colorbar,username=username,usr_size=usr_size,figwidth=figwidth,figheight=figheight) 
+        if save:
+            simplefieldplot(x[xa_start:xa_end],y[ya_start:ya_end],
+                    pfull[plane/dz,ya_start:ya_end,xa_start:xa_end],exptitle,expnr,prop,
+                    xlabel=xlabel,ylabel=ylabel,filetype=filetype,colorbar=colorbar,username=username,usr_size=usr_size,figwidth=figwidth,figheight=figheight) 
+        else:
+            fig,ax = plt.subplots()
 
-    if xa == 'y' and ya == 'z':
-        xa_start = int(round(xa_start/dy))
-        ya_start = int(round(ya_start/dz))
-        xa_end = int(round(xa_end/dy))
-        ya_end = int(round(ya_end/dz))
-        simplefieldplot(y[xa_start:xa_end],z[ya_start:ya_end],
-                p_tmean[ya_start:ya_end,xa_start:xa_end],exptitle,expnr,prop,
-                xlabel=xlabel,ylabel=ylabel,filetype=filetype,colorbar=colorbar,username=username,usr_size=usr_size,figwidth=figwidth,figheight=figheight) 
+            cax = ax.contourf(x[xa_start:xa_end],y[ya_start:ya_end],pfull[plane/dz,ya_start:ya_end,xa_start:xa_end],N=200)
+            cbaxes = fig.add_axes([0.2,1.0,0.6,0.03])
+            cbar = fig.colorbar(cax,ticks=[0,1],cax=cbaxes,orientation='horizontal')
+            plt.show()
+
+plt.close()
+
+
+                

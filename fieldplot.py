@@ -37,6 +37,9 @@ def simplefieldplot(X,Y,Z,exptitle='',expnr='',prop='',N = 200,
         fig.set_size_inches(figwidth,figheight)
 
     print 'Plotting contours'
+    #minval = round(np.amin(Z),2)
+    #minval = np.amin(Z)
+    #V = np.linspace(minval,1,100)
     cax = ax.contourf(X,Y,Z,N,rasterized=True) 
     ax.contour(X,Y,Z,N,rasterized=True) 
     ax.set_xlabel(xlabel)
@@ -45,17 +48,21 @@ def simplefieldplot(X,Y,Z,exptitle='',expnr='',prop='',N = 200,
         #colorbar setting for one large plot:
         #cbaxes = fig.add_axes([0.8,0.2,0.03,0.3])
         #cbar = fig.colorbar(cax,ticks=[0,np.amax(Z)],cax=cbaxes,orientation='vertical')
-        cbar = fig.colorbar(cax,ticks=[np.amin(Z),np.amax(Z)],fraction=0.036, pad=0.04,orientation='vertical')
+        #cbar = fig.colorbar(cax,ticks=[np.amin(Z),np.amax(Z)],fraction=0.036, pad=0.04,orientation='vertical')
         #cbar.ax.set_yticklabels(['$%s$' % round(np.amin(Z),1), '$1.0$'])
         #colorbar settings for three small plots next to each other:
-        #cbaxes = fig.add_axes([0.2,1.0,0.6,0.03])
-        #cbar = fig.colorbar(cax,ticks=[np.amin(Z),np.amax(Z)],cax=cbaxes,orientation='horizontal')
+        #cbaxes = fig.add_axes([0.3,1.10,0.4,0.03])
+        #cbar = fig.colorbar(cax,ticks=[round(np.amin(Z),2),round(np.amax(Z),2)],cax=cbaxes,orientation='horizontal')
+        cbar = fig.colorbar(cax,ticks=[minval,round(1.,1)],pad=0.1,orientation='horizontal')
 
     if plot_title != 0:
         ax.set_title(plot_title)
+
+    #ax.set_yticks([-100,0, 100])
+    ax.set_yticks([100, 200])
     
     print 'Saving figure'
-    fig.savefig(figurepath,bbox_inches='tight',dpi=300,format='%s' % filetype)
+    fig.savefig(figurepath,bbox_inches='tight',format='%s' % filetype)
     
 
 def lineplot(X,Y,exptitle='',expnr='',prop='',plot_title=0,xlabel = 'x', ylabel = 'y', username='pim'):
