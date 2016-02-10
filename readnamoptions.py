@@ -10,7 +10,9 @@ def readnamoptions(exptitle,expnr,username='pim',turbine=True):
     expdir = expsdir + '/%s/%s' %(exptitle,expnr)
   
     #Read windturbinemonitor
-    with open(expdir + '/windturbinemonitor.%s' % expnr, 'r') as wtdata:
+    filename = '/windturbinemonitor.001.%s' % expnr
+
+    with open(expdir + filename , 'r') as wtdata:
         header = 5
         for i, line in enumerate(wtdata):
             if i in range(header,header+12):
@@ -37,11 +39,11 @@ def readnamoptions(exptitle,expnr,username='pim',turbine=True):
         if namopt[i].find('dtav')!=-1:
             dtav = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
         if namopt[i].find('itot')!=-1:
-            itot = int(namopt[i].rstrip()[namopt[i].index('=')+1:])
+            itot = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
         if namopt[i].find('jtot')!=-1:
-            jtot = int(namopt[i].rstrip()[namopt[i].index('=')+1:])
+            jtot = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
         if namopt[i].find('kmax')!=-1:
-            kmax = int(namopt[i].rstrip()[namopt[i].index('=')+1:])
+            kmax = float(namopt[i].rstrip()[namopt[i].index('=')+1:])
         if namopt[i].find('cu')!=-1:
             cu = float(namopt[i].rstrip()[namopt[i].index('=')+1:]) 
         if namopt[i].find('cv')!=-1:
@@ -65,5 +67,5 @@ def readnamoptions(exptitle,expnr,username='pim',turbine=True):
     turr = windfarmdata[:,4] 
 
         
-    return {'ntur': ntur, 'runtime': runtime, 'dtav': dtav, 'itot': itot, 'jtot': jtot, 'kmax': kmax, 'xsize': xsize, 'ysize': ysize, 'zsize':zsize,'cu': cu, 'cv': cv, 'dx': dx, 'dy': dy, 'dz': dz, 'tura' : tura, 'turhx': turhx, 'turhy':turhy, 'turhz':turhz,'turr':turr}
+    return {'ntur': ntur, 'runtime': runtime, 'dtav': dtav, 'itot': itot, 'jtot': jtot, 'kmax': kmax, 'xsize': xsize, 'ysize': ysize, 'zsize':zsize,'cu': cu, 'cv': cv, 'dx': dx, 'dy': dy, 'dz': dz, 'turhx': turhx, 'turhy':turhy, 'turhz':turhz,'turr':turr}
 

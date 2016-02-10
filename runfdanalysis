@@ -1,0 +1,9 @@
+#!/bin/bash
+#$ -q all.q
+#$ -l h_rt=100000
+
+run_dir=$(pwd)
+
+python -u ./fielddumpanalysis_cirrus.py
+
+mv runfdanalysis.* $run_dir/outputfiles

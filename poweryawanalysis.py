@@ -7,7 +7,6 @@ import numpy as np
 import readnamoptions as rno
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from fieldplot import lineplot
 from datetime import *
 import os.path
 import os

@@ -2,26 +2,29 @@
 #Filename: animatefielddump.py
 #Description: make an animation of snapshot contours
 
-from numpy import *
+import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import animation
 import readfielddump as rfd
 import readnamoptions as rno
-from datetime import *
+import datetime as dt
 import os
 import os.path
 
 username = 'pim'
 
-eurocs = True
+eurocs = False
 gabls = False
+cbl = True
 
-expnr = '001'
+expnr = '320'
 
 if gabls:
     exptitle = 'Single_turbine_GABLS'
 if eurocs:
     exptitle = 'Single_turbine_EUROCS'
+if cbl:
+    exptitle = 'Single_turbine_CBL'
 
 dpi = 250
 fps = 8
@@ -69,38 +72,36 @@ ya_end = ysize
 # plane at 
 plane = turhz[0]
 
-t_start = 60 # t_start and t_end are required to be multiples of dtav
-t_end = runtime 
+hour = 3600.
+t_start = 0*hour 
+t_end = 5*hour
+dtav = 60.
 
-t_start = dtav*int(round(t_start/dtav))
-t_end = dtav*int(round(t_end/dtav))
-
-tin = rfd.readtime(exptitle,expnr,username=username)
-tsteps = tin['tsteps']
-t = tin['t']
-
-t = ndarray.tolist(t)
-
-if t_start > t[-1]:
-    t_start = t[-1]
-elif t_start < t[0]:
-    t_start = t[0]
-t_start_in = t.index(t_start)
-
-if t_end > t[-1]:
-    t_end = t[-1]
-t_end_in = t.index(t_end)
+t_start_in = int(t_start/dtav)
+t_end_in = int(t_end/dtav-1)
 
 print 't_start, t_end = ', t_start, t_end
+print 't_start_in, t_end_in = ', t_start_in, t_end_in
+t_start_in=90
+t_end_in=539
+
+trange=[0,539]
+
 nFrames = t_end_in-t_start_in
 
-data = rfd.readprop(exptitle,expnr,prop,xa,ya,plane,t_start_in,t_end_in)
-x = data['x']
-y = data['y']
-p = data[prop] 
-p = p/float(1E3)
+print 'Loading array from disk'
+datadir = '/home/%s/fd_data/%s' % (username,exptitle)
 
-tdy = datetime.today()
+filename = '%s_%s_%s_%s_%s.npy' % (exptitle, expnr, prop,trange[0],trange[1])
+datapath = datadir + '/%s' % (filename)
+
+pfull = np.load(datapath,mmap_mode='r')
+p = pfull[t_start_in:t_end_in,plane/dz,:,:]
+
+x = np.arange(0,np.shape(p)[2])*dx+0.5*dx #xt
+y = np.arange(0,np.shape(p)[1])*dy+0.5*dy #yt
+
+tdy = dt.datetime.today()
 
 figuredir = '/home/%s/animations/%s' % (username,exptitle)
 
@@ -113,12 +114,17 @@ figurepath = figuredir + '/%s.mp4' % (filename)
 fig = plt.figure()
 ax = plt.axes()
 
-xa_start = int(round(xa_start/dy))
+xa_start = int(round(xa_start/dx))
 ya_start = int(round(ya_start/dy))
-xa_end = int(round(xa_end/dy))
+xa_end = int(round(xa_end/dx))
 ya_end = int(round(ya_end/dy))
 
-levels = linspace(amin(p),amax(p),50)
+alph = 1/60.
+levmin = np.amin(p)
+levmax = np.amax(p)
+#levmin = alph*np.amin(z)+(1-alph)*levmin 
+#levmax = alph*np.amin(z)+(1-alph)*levmax 
+levels = np.linspace(levmin,levmax,80)
 
 print 'Building animation'
 def animate(i):

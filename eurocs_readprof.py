@@ -7,6 +7,7 @@ import pupynere as pu
 import readnamoptions as rno
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from matplotlib import ticker
 import datetime
 import os.path
 import os
@@ -51,8 +52,14 @@ def find_nearest(array,value):
 #---------------------
 username = 'pim'
 optpath = 'eurocs'
+presentation = False
 
-save = False
+mpl.rcParams['font.size']=10.
+if presentation:
+    mpl.rcParams['font.family']='sans-serif'
+    mpl.rcParams['text.latex.preamble'] = [r'\usepackage{sansmath}',r'\sansmath']   
+
+save = True
 show = False
 if not save:
     show = True
@@ -60,12 +67,26 @@ if not save:
 eurocs = 'Single_turbine_EUROCS'
 
 exptitle = [eurocs, eurocs]
-expnr = ['400','402']
-marker = ['-k', ':k']
+#expnr = ['400','402']
+expnr = ['410','420']
+
+label = ['Cloudy', 'Clear'] 
+marker = ['-', '-']
+colorexp = ['#000000','#00A6D6','#939393']
 
 # time settings
-t_start = 0*hour 
-t_end = 37*hour
+day = False
+night = False
+if day:
+    t_start = 11*hour 
+    t_end = 12*hour
+elif night:
+    t_start = 23*hour 
+    t_end = 24*hour
+else: 
+    t_start = 0*hour 
+    t_end = 37*hour
+
 
 #---------------------
 #     Properties
@@ -73,23 +94,22 @@ t_end = 37*hour
 # wthvt = buoyancy flux; wthlt = total theta_l flux; thv = virtual pot. temp; thl = liq. pot. temp; w2r = vert. velocity variance; uwt/vwt = vertical momentum fluxes
 # tmser.nc: lwp_bar, zb, zc_av
 # Use wthvt instead of wthlt when no moist to get lowest level right
-#prop = ['lwp_bar'] 
-#prop = ['zb', 'zc_av']
-prop = ['Vwt'] 
+prop = ['lwp_bar'] 
+#prop = ['w2r']
 
 normprop = False
 
 #---------------------
 #   profiles.nc
 #---------------------
-readprof = True
+readprof = False
 
 timeseries = False
 height_av = False
 
 zser = True
 zmin = 0 
-zmax = 1500
+zmax = 700
 
 trans = False
 
@@ -112,7 +132,19 @@ if nsubfigures == 1:
 else:
     margin = 0.7
 figwidth = (a4width-2*margin)/float(nsubfigures)
-figheight = figwidth/3
+if prop == 'lwp_bar': 
+    figheight = figwidth/3.
+else:
+    figheight = figwidth
+
+if presentation:
+    def cm2inch(value):
+        return value/2.54
+#12.8cm x 9.6cm
+    #figwidth = cm2inch(5)
+    figwidth = cm2inch(10)
+    figheight = cm2inch(5)
+
 print 'figheight, figwidth = ', figheight, figwidth
 
 fig = plt.figure()
@@ -121,10 +153,11 @@ ax = plt.subplot(111)
 fig.set_size_inches(figwidth,figheight)
 
 # Axes
-#ax.set_xlim((-6,8))
 #ax.set_xlim((0,0.3))
-#ax.set_xlim((0,37))
-ax.set_ylim((0,700))
+#ax.set_xlim((0,0.3))
+ax.set_xlim((0,37))
+#ax.set_ylim((0,zmax))
+ax.set_ylim((0,250))
 
 # Labels
 if readprof:
@@ -161,11 +194,6 @@ tdy = datetime.datetime.today()
 filename += '_%s' % tdy.strftime('%d%m_%H%M%S')
 
 figurepath = figuredir + '/%s.pdf' % (filename)
-
-font = {'family' : 'computer modern',
-    'weight' : 'bold',
-    'size'   : 10}
-mpl.rc('font', **font)
 
 box = ax.get_position()
 ax.set_position([box.x0, box.y0,
@@ -214,7 +242,7 @@ for i,u in enumerate(exptitle):
                     p = p - p[0]
                 zmin_in = find_nearest(z,zmin)
                 zmax_in = find_nearest(z,zmax)
-                plt.plot(p[zmin_in:zmax_in],z[zmin_in:zmax_in],marker[i], linewidth=0.8)
+                plt.plot(p[zmin_in:zmax_in],z[zmin_in:zmax_in],marker[i],color=colorexp[i],label=label[i], linewidth=0.8)
         elif readtmser:
             data = readproptmser(u,expnr[i],v)
             time = data['time']
@@ -228,7 +256,27 @@ for i,u in enumerate(exptitle):
             if v=='lwp_bar':
                 p = p*1000
 
-            plt.plot(time[t_start_in:t_end_in],p[t_start_in:t_end_in],marker[i],linewidth=0.8)
+            plt.plot(time[t_start_in:t_end_in],p[t_start_in:t_end_in],marker[i],color=colorexp[i],label=label[i],linewidth=0.8)
+
+if presentation:
+    if day:
+        plt.title('11.00-12.00')
+    elif night:
+        plt.title('23.00-24.00')
+
+    #ax.set_xticks([0,0.1,0.2,0.3])
+    fontProperties = {'family':'sans-serif', 'size' : 10}
+    ax.set_xticklabels(ax.get_xticks(), fontProperties)
+    ax.set_yticklabels(ax.get_yticks(), fontProperties)
+    #ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
+    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.0f'))
+    ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.0f'))
+    #ax.legend(fontsize=8,frameon=False)#,loc=2)
+
+
+#ax.set_xticks(np.arange(0,0.35,0.05))
+ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.0f'))
+ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.0f'))
 
 if show:
     plt.show()

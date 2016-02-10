@@ -1,101 +1,86 @@
 #!/usr/bin/python
-#Filename: fieldplot.py
-#Description: simple fieldplotter
 
 import numpy as np
-import readfielddump as rfd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import matplotlib.patches as patches
-from datetime import *
-import os.path
+import datetime as dt
+import readnamoptions as rno
+import pupynere as pu
 import os
+import os.path
 
-def simplefieldplot(X,Y,Z,exptitle='',expnr='',prop='',N = 200,
-                    plot_title=0,xlabel ='x',ylabel ='y',filetype='pdf',width=0,height=0,username='pim',colorbar=True,usr_size=False,figwidth=2.7,figheight=2.7,aspectratio=1):
+username = 'pim'
 
-    tdy = datetime.today()
+exptitle = 'Single_turbine_CBL'
+expnr = '390'
+
+presentation = False
+
+readnamopt = True
+if readnamopt:
+    namopt = rno.readnamoptions(exptitle,expnr,username)
+    dy = namopt['dy']
+    dx = namopt['dx']
+    dz = namopt['dz']
+    xsize = namopt['xsize']
+    ysize = namopt['ysize']
+    zsize = namopt['zsize']
+    turhx = namopt['turhx']
+    turhy = namopt['turhy']
+    turhz = namopt['turhz']
+
+prop = 'vhoravg'
+
+trange=[0,2]
+
+t_start_in=0
+t_end_in=trange[1] - trange[0] - 1
+
+datadir = '/nfs/livedata/pim/fielddumpdata/%s/%s' % (exptitle,expnr)
+
+filename = '%s_%s_%s_%s_%s.nc' % (exptitle, expnr, prop,trange[0],trange[1])
+datapath = datadir + '/%s' % (filename)
+
+f = pu.netcdf_file(datapath)
+
+pfull = f.variables[prop][:,:,:,:]
+x = f.variables['xt'][:]
+y = f.variables['yt'][:]
+z = f.variables['zt'][:]
+
+mpl.rcParams['font.size']=10.
+if presentation:
+    mpl.rcParams['font.family']='sans-serif'
+    mpl.rcParams['text.latex.preamble'] = [r'\usepackage{sansmath}',r'\sansmath',r'\usepackage{siunitx}',r'\sisetup{detect-all}']           
+
+fig = plt.figure()
+ax = fig.add_subplot(1,1,1,aspect='equal')
+
+#p = np.mean(pfull[:,turhz[0]/dz,:,:],axis=0)
+p = pfull[-1,turhz[0]/dz,:,:]
+#p = pfull[-1,:,50,:]
+
+levmin = np.amin(p)
+levmax = np.amax(p)
+levels = np.linspace(levmin,levmax,100)
+CF = ax.contourf(p,levels)
+fig.colorbar(CF)
+for c in CF.collections:
+    c.set_edgecolor("face")
+
+tdy = dt.datetime.today()
     
-    figuredir = '/home/%s/figures/%s' % (username,exptitle)
+figuredir = '/home/%s/figures/%s' % (username,exptitle)
 
-    if not os.path.isdir(figuredir):
-        os.makedirs(figuredir)
-    
-    filename = '%s_%s_%s_%s' % (exptitle, expnr, prop, tdy.strftime('%d%m_%H%M%S'))
-    figurepath = figuredir + '/%s.%s' % (filename,filetype)
-    optfilepath = figuredir + '/%s.txt' % (filename)
+if not os.path.isdir(figuredir):
+    os.makedirs(figuredir)
 
-    font = {'family' : 'computer modern',
-        'weight' : 'medium',
-        'size'   : 10}
-    mpl.rc('font', **font)
+filename = '%s_%s_%s_%s' % (exptitle, expnr, prop, tdy.strftime('%d%m_%H%M%S'))
+if presentation:
+    filename += '_presentation'
 
-    fig,ax = plt.subplots()
-    
-    ax.set_aspect(aspectratio)
-    if usr_size == True:
-        fig.set_size_inches(figwidth,figheight)
+figurepath = figuredir + '/%s.png' % (filename)
 
-    print 'Plotting contours'
-    #minval = round(np.amin(Z),2)
-    #minval = np.amin(Z)
-    #V = np.linspace(minval,1,100)
-    cax = ax.contourf(X,Y,Z,N,rasterized=True) 
-    ax.contour(X,Y,Z,N,rasterized=True) 
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    if (colorbar==True):
-        #colorbar setting for one large plot:
-        #cbaxes = fig.add_axes([0.8,0.2,0.03,0.3])
-        #cbar = fig.colorbar(cax,ticks=[0,np.amax(Z)],cax=cbaxes,orientation='vertical')
-        #cbar = fig.colorbar(cax,ticks=[np.amin(Z),np.amax(Z)],fraction=0.036, pad=0.04,orientation='vertical')
-        #cbar.ax.set_yticklabels(['$%s$' % round(np.amin(Z),1), '$1.0$'])
-        #colorbar settings for three small plots next to each other:
-        #cbaxes = fig.add_axes([0.3,1.10,0.4,0.03])
-        #cbar = fig.colorbar(cax,ticks=[round(np.amin(Z),2),round(np.amax(Z),2)],cax=cbaxes,orientation='horizontal')
-        cbar = fig.colorbar(cax,ticks=[minval,round(1.,1)],pad=0.1,orientation='horizontal')
-
-    if plot_title != 0:
-        ax.set_title(plot_title)
-
-    #ax.set_yticks([-100,0, 100])
-    ax.set_yticks([100, 200])
-    
-    print 'Saving figure'
-    fig.savefig(figurepath,bbox_inches='tight',format='%s' % filetype)
-    
-
-def lineplot(X,Y,exptitle='',expnr='',prop='',plot_title=0,xlabel = 'x', ylabel = 'y', username='pim'):
-
-    tdy = datetime.today()
-    
-    figuredir = '/home/%s/figures/%s' % (username,exptitle)
-
-    if not os.path.isdir(figuredir):
-        os.makedirs(figuredir)
-    
-    filename = '%s_%s_%s_%s' % (exptitle, expnr, prop, tdy.strftime('%d%m_%H%M%S'))
-    figurepath = figuredir + '/%s.pdf' % (filename)
-
-    font = {'family' : 'computer modern',
-        'weight' : 'medium',
-        'size'   : 12}
-    mpl.rc('font', **font)
-    
-    plt.plot(X,Y)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    
-    if plot_title != 0:
-        plt.title(plot_title)
-
-    plt.savefig(figurepath,bbox_inches='tight')
-    
-    plt.close()
-
-
-
-
-
-
+plt.show()
+#fig.savefig(figurepath,bbox_inches='tight',format='png',dpi=400)
 

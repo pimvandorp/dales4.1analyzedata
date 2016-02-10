@@ -11,22 +11,35 @@ username = 'pim'
 cbl = 'Single_turbine_CBL'
 sbl = 'Single_turbine_GABLS'
 nbl = 'Single_turbine_NBL'
+eurocs = 'Single_turbine_EUROCS'
+aitken = 'Single_turbine_Aitken_stable'
+hornsrev = 'Single_turbine_Hornsrev'
+hornsrevCBL = 'Hornsrev_CBL'
 
-exptitle = [sbl]#, cbl, cbl]
-expnr = ['103']#, '305', '355']
+casetitle = ''
 
-props = ['wavg']#, 'w', 'thl']
+livedata = True
+fielddumpdir = False
+
+exptitle = [cbl]
+expnr = ['390']
+
+props = ['vhoravg']
 
 dtav = 60.
 
 hour = 3600.
-t_start = [10*hour, 3*hour, 3*hour] 
-t_end = [11*hour,6*hour,6*hour]
+t_start = [0]
+t_end = [hour]
+timeav = False
+netcdf = True
+zslice = False
+zsum = False
 
 for i,v in enumerate(exptitle):
     for j,w in enumerate(props):
         print 'Start %s %s ' % (v, expnr[i])
-        tin = rfd.readtime(v,expnr[i],username)
+        tin = rfd.readtime(v,casetitle,expnr[i],livedata=livedata,username=username)
         t = tin['t']
 
         t = np.ndarray.tolist(t)
@@ -48,7 +61,7 @@ for i,v in enumerate(exptitle):
         print 't_start, t_end = ', t_start[i], t_end[i]
 
         t_start_in = int(t_start_in)
-        t_end_in = int(t_end_in)
+        t_end_in = int(t_end_in) + 1
 
-        rfd.readfull(v, expnr[i],w,t_start_in,t_end_in,username,save=True)
+        rfd.readfull(v,casetitle, expnr[i],w,t_start_in,t_end_in,username=username,livedata=livedata,save=True,timeav=timeav,fielddumpdir=fielddumpdir, dtav = dtav,netcdf=netcdf,zslice=zslice,zsum=zsum)
 
