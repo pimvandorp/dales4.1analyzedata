@@ -4,13 +4,16 @@
 
 from numpy import *
 
-def readnamoptions(exptitle,expnr,username='pim',turbine=True):
+def readnamoptions(exptitle,expnr,username='pim',turbine=True,parallel=True):
 
     expsdir = '/home/%s/Les/Experiments' % (username)
     expdir = expsdir + '/%s/%s' %(exptitle,expnr)
   
     #Read windturbinemonitor
-    filename = '/windturbinemonitor.001.%s' % expnr
+    if parallel:
+        filename = '/windturbinemonitor.001.%s' % expnr
+    else:
+        filename = '/windturbinemonitor.%s' % expnr
 
     with open(expdir + filename , 'r') as wtdata:
         header = 5
@@ -29,7 +32,7 @@ def readnamoptions(exptitle,expnr,username='pim',turbine=True):
 
 
     #Read namoptions
-    with open(expdir + '/namoptions', 'r') as namopt:
+    with open(expdir + '/namoptions.%s' % expnr, 'r') as namopt:
         namopt = list(namopt)
 
     for i in range(len(namopt)):
@@ -58,13 +61,19 @@ def readnamoptions(exptitle,expnr,username='pim',turbine=True):
             tura = 0
 
     #Read windfarmdata.inp
-    windfarmdata = zeros((ntur+1,12))
-    windfarmdata[:-1,:] = loadtxt(expdir + '/windfarmdata.inp.%s' % expnr,skiprows=1)
-    turid = windfarmdata[:,0] 
-    turhx = windfarmdata[:,1] 
-    turhy = windfarmdata[:,2] 
-    turhz = windfarmdata[:,3] 
-    turr = windfarmdata[:,4] 
+    windfarmdata = loadtxt(expdir + '/windfarmdata.inp.%s' % expnr,skiprows=1)
+    if ntur == 1:
+        turid = windfarmdata[0] 
+        turhx = windfarmdata[1] 
+        turhy = windfarmdata[2] 
+        turhz = windfarmdata[3] 
+        turr = windfarmdata[4] 
+    else:
+        turid = windfarmdata[:,0] 
+        turhx = windfarmdata[:,1] 
+        turhy = windfarmdata[:,2] 
+        turhz = windfarmdata[:,3] 
+        turr = windfarmdata[:,4] 
 
         
     return {'ntur': ntur, 'runtime': runtime, 'dtav': dtav, 'itot': itot, 'jtot': jtot, 'kmax': kmax, 'xsize': xsize, 'ysize': ysize, 'zsize':zsize,'cu': cu, 'cv': cv, 'dx': dx, 'dy': dy, 'dz': dz, 'turhx': turhx, 'turhy':turhy, 'turhz':turhz,'turr':turr}

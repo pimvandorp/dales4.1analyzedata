@@ -8,11 +8,12 @@ import readnamoptions as rno
 import pupynere as pu
 import os
 import os.path
+import matplotlib.cm as cm
 
 username = 'pim'
 
-exptitle = 'Single_turbine_CBL'
-expnr = '390'
+exptitle = 'NorthHoyle_NBL'
+expnr = '102'
 
 presentation = False
 
@@ -31,7 +32,7 @@ if readnamopt:
 
 prop = 'vhoravg'
 
-trange=[0,2]
+trange=[119,179]
 
 t_start_in=0
 t_end_in=trange[1] - trange[0] - 1
@@ -43,10 +44,11 @@ datapath = datadir + '/%s' % (filename)
 
 f = pu.netcdf_file(datapath)
 
-pfull = f.variables[prop][:,:,:,:]
+#pfull = f.variables[prop][:,:,:,:]
+pfull = f.variables[prop][:,:,:]
 x = f.variables['xt'][:]
 y = f.variables['yt'][:]
-z = f.variables['zt'][:]
+#z = f.variables['zt'][:]
 
 mpl.rcParams['font.size']=10.
 if presentation:
@@ -56,14 +58,14 @@ if presentation:
 fig = plt.figure()
 ax = fig.add_subplot(1,1,1,aspect='equal')
 
-#p = np.mean(pfull[:,turhz[0]/dz,:,:],axis=0)
-p = pfull[-1,turhz[0]/dz,:,:]
-#p = pfull[-1,:,50,:]
+p = np.mean(pfull[:,:,:],axis=0)
+#p = pfull[-1,:,:]
 
 levmin = np.amin(p)
 levmax = np.amax(p)
 levels = np.linspace(levmin,levmax,100)
-CF = ax.contourf(p,levels)
+CF = ax.contourf(x,y,p,levels)
+
 fig.colorbar(CF)
 for c in CF.collections:
     c.set_edgecolor("face")
@@ -81,6 +83,6 @@ if presentation:
 
 figurepath = figuredir + '/%s.png' % (filename)
 
-plt.show()
-#fig.savefig(figurepath,bbox_inches='tight',format='png',dpi=400)
+#plt.show()
+fig.savefig(figurepath,bbox_inches='tight',format='png',dpi=400)
 

@@ -100,11 +100,11 @@ Tsurf = 273.16+4.7
 csurf = ((psurf/p0)**(Rd/cp))
 thetasurf = Tsurf/csurf
 
-exptitle = 'Single_turbine_Hornsrev'
-expnr = ['144', '154']
+exptitle = 'Hornsrev_wakeclouds'
+expnr = ['203' , '029', '030'] 
 
 marker = [ '-', ':','.-','-^']
-t_start = 2*hour
+t_start = 2.5*hour
 
 Tn = .8+273.16
 preshn = 96700
@@ -120,12 +120,15 @@ for i,v in enumerate(height):
     Tfit = np.append(Tfit,277.2-4.201e-3*v)
 
 for i,v in enumerate(expnr):
+    if v == '936':
+        exptitle = 'Single_turbine_Hornsrev'
+        t_start = 6000
     data = readprop(exptitle,v,'thl')
     zt = data['zt']
     zm = data['zm']
     time = data['time']
     t_start_in = find_nearest(time,t_start)
-    print 't_start = ', (t_start_in+1)*600
+    print 't_start = ', time[t_start_in]
 
     thl = data['thl'][t_start_in,:] 
     presh = readprop(exptitle,v,'presh')['presh'][t_start_in,:]
@@ -171,14 +174,17 @@ for i,v in enumerate(expnr):
         #ax.plot(100000*qlsim,zt,'b',label='$10^3 \\times q_{l,\mathrm{sim}}$')
         ax.set_xlabel('Humidity $\mathrm{[g/kg]}$')
         ax.set_ylabel('Height $\mathrm{[m]}$')
-        plt.xlim(4.4,5.0)
-        ax.set_xticks(np.arange(4.,5.2,0.2))
+        plt.xlim(4.,5.5)
+        #ax.set_xticks(np.arange(4.,5.2,0.2))
         ax.set_yticks(np.arange(50,250,50))
+
+qt2h = 5.1e-3 - (5.1e-3-4.0e-3)*(1-np.exp(-1/100.*(zt)))
+#ax.plot(1000*qt2h,zt)
 
 ax.plot(ax.get_xlim(),[70,70],':k',zorder = 1, alpha = 0.5)
 ax.plot(ax.get_xlim(),[110,110],':k',zorder = 1, alpha = 0.5)
 ax.plot(ax.get_xlim(),[30,30],':k',zorder = 1, alpha = 0.5)
-plt.ylim(0,200)
+plt.ylim(0,400)
 ax.legend(loc='upper right',frameon=False,fontsize = 8)
 #plt.title('%s s after initialization' % t_start)
 

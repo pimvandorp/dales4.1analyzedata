@@ -13,6 +13,7 @@ sbl = 'Single_turbine_GABLS'
 nbl = 'Single_turbine_NBL'
 eurocs = 'Single_turbine_EUROCS'
 aitken = 'Single_turbine_Aitken_stable'
+mirocha = 'Single_turbine_Mirocha_wcbl'
 hornsrev = 'Single_turbine_Hornsrev'
 hornsrevCBL = 'Hornsrev_CBL'
 
@@ -21,16 +22,16 @@ casetitle = ''
 livedata = True
 fielddumpdir = False
 
-exptitle = [cbl]
-expnr = ['390']
+exptitle = [mirocha]
+expnr = ['213']
 
-props = ['vhoravg']
+props = ['fx']
 
 dtav = 60.
 
 hour = 3600.
-t_start = [0]
-t_end = [hour]
+t_start = [8*hour+900]
+t_end = [9*hour]
 timeav = False
 netcdf = True
 zslice = False

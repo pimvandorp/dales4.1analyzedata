@@ -5,6 +5,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import animation
+import matplotlib as mpl
 import pupynere as pu
 import readfielddump as rfd
 import readnamoptions as rno
@@ -12,28 +13,28 @@ import datetime as dt
 import os
 import os.path
 import subprocess
+import matplotlib.cm as cm
 
+
+presentation = True
+
+mpl.rcParams['font.size']=10.
+if presentation:
+    mpl.rcParams['font.family']='sans-serif'
+    mpl.rcParams['text.latex.preamble'] = [r'\usepackage{sansmath}',r'\sansmath']   
 
 username = 'pim'
 
-exptitle = 'Q7_CBL'
-expnr = '003'
+exptitle = 'Hornsrev_wakeclouds'
+expnr = '303'
 
 dpi = 100
 fps = 7
 bitrate = -1
 
-prop = 'vhoravg' # property to be analysed (u,v,w,etc.)  
+prop = 'ql' # property to be analysed (u,v,w,etc.)  
 
-# x-axis 
-xa = 'x' 
-
-# y-axis
-ya = 'y'
-
-hour = 60
-
-trange=[29,37]
+trange=[699,719]
 t_start_in=0
 t_end_in=trange[1] - trange[0] - 1
 
@@ -49,45 +50,51 @@ datapath = datadir + '/%s' % (filename)
 f = pu.netcdf_file(datapath)
 
 pfull = f.variables[prop][:,:,:]
-x = f.variables['xt'][:]
-y = f.variables['yt'][:]
+x = f.variables['xt'][:]/1000.
+y = f.variables['yt'][:]/1000.
 
-#x = np.arange(0,np.shape(pfull)[2])*dx+0.5*dx #xt
-#y = np.arange(0,np.shape(pfull)[1])*dy+0.5*dy #yt
+fig = plt.figure()
+ax = plt.subplot(111)
 
-fig = plt.figure(frameon=False, figsize=(7, 5), dpi=200)
-canvas_width, canvas_height = fig.canvas.get_width_height()
-ax = fig.add_axes([0, 0, 1, 1])
-ax.axis('off')
-
-#xa_start = int(round(xa_start/dx))
-#ya_start = int(round(ya_start/dy))
-#xa_end = int(round(xa_end/dx))
-#ya_end = int(round(ya_end/dy))
+fig.set_size_inches(7,5)
 
 os.system('rm -r ./animtemp/*')
 
+fontProperties = {'family':'sans-serif', 'size' : 10}
+
+ax.set_aspect('equal')
+ax.set_xticks(np.arange(1,8,1))
+ax.set_yticks(np.arange(1,7,1))
+ax.set_xticklabels(ax.get_xticks(), fontProperties)
+ax.set_yticklabels(ax.get_yticks(), fontProperties)
+ax.set_xlabel('$x$ [km]')
+ax.set_ylabel('$y$ [km]')
+
 for i in range(0,nFrames):
-    z = pfull[i,:,:]
-    levmin = np.amin(pfull[max(i-16,0):min(i+16,t_end_in),:,:])
-    levmax = np.amax(pfull[max(i-16,0):min(i+16,t_end_in),:,:])
+    ii = i + t_start_in
+    z = pfull[ii,9:-9,9:-9]
+    #levmin = np.amin(pfull[:,9:-9,9:-9])#pfull[max(i-16,0):min(i+16,t_end_in),:,:])
+    #levmax = np.amax(pfull[:,9:-9,9:-9])#pfull[max(i-16,0):min(i+16,t_end_in),:,:])
+    levmin = np.amin(pfull[max(ii-10,0):min(ii+10,t_end_in),9:-9,9:-9])
+    levmax = np.amax(pfull[max(ii-10,0):min(ii+10,t_end_in),9:-9,9:-9])
     levels = np.linspace(levmin,levmax,100)
-    cont = plt.contourf(x,y,z,levels)
-    plt.gca().set_aspect('equal')
+    cont = ax.contourf(x[9:-9],y[9:-9],z,levels,cmap = cm.Greys_r)
     print 'saving frame %s' % i
-    plt.savefig('animtemp/%d.png' % (i+1) ,bbox_inches='tight',dpi=200)
+    plt.savefig('animtemp/anim-%d.png' % (i+1) ,bbox_inches='tight',dpi=150)
 
 figuredir = '/home/%s/animations/%s' % (username,exptitle)
 
 if not os.path.isdir(figuredir):
     os.makedirs(figuredir)
 
-filename = '%s_%s_%s_%s_%s' % (exptitle, expnr, prop,trange[0],trange[1])
+filename = '%s_%s_%s_%s_%s_' % (exptitle, expnr, prop,t_start_in,t_end_in)
+tdy = dt.datetime.today()
+filename += tdy.strftime('%d%m_%H%M%S')
 figurepath = figuredir + '/%s.mp4' % (filename)
 
-os.system('ffmpeg -f image2 -r 8 -i \'animtemp/%d.png\' -r 24 -vcodec copy animtemp/out.mp4')
-
-os.system('mv animtemp/out.mp4 %s' % figurepath )
+os.system('ffmpeg -f image2 -r 7 -i \'animtemp/anim-%d.png\' -r 24 -vcodec copy animtemp/output.mp4')
+#os.system('ffmpeg -r 8 -i \'animtemp/anim-%d.png\' animtemp/output.gif')
+os.system('mv animtemp/output.mp4 %s' % figurepath )
     
 
     
