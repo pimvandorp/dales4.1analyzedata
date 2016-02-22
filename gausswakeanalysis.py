@@ -49,8 +49,8 @@ if diag:
     ax2 = fig2.add_subplot(111)
     fig2.set_size_inches(figwidth,figheight)
 
-aitken = False
-mirocha = True
+aitken = True
+mirocha = False
 kasler = False
 if aitken:
     exptitle = 'Single_turbine_Aitken_stable'
@@ -110,7 +110,7 @@ elif mirocha:
 elif aitken:
     vertical = True
     spanwise = False
-    sym = False
+    sym = True
     dmax = 10
 
 if diag:
