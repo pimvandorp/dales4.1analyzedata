@@ -101,7 +101,7 @@ csurf = ((psurf/p0)**(Rd/cp))
 thetasurf = Tsurf/csurf
 
 exptitle = 'Hornsrev_wakeclouds'
-expnr = ['203' , '029', '030'] 
+expnr = ['203' , '206'] 
 
 marker = [ '-', ':','.-','-^']
 t_start = 2.5*hour
