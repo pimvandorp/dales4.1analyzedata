@@ -13,6 +13,15 @@ import os.path
 import os
 
 hour = 3600
+Rd = 287.06         #value from ECMWF IFS 21r4 287.04
+Rv = 461.5          #gas constant for water vapor [J/K/kg]
+eps = Rv/Rd
+cp = 1004.703       #        
+Lv = 2.5008e6       #latent heat of condensation
+p0 = 1.e5           #reference pressure
+g  = 9.80665        #gravity acceleration
+pi = 3.14159
+Tkel = 273.16
 
 def readprop(exptitle,expnr,prop,username='pim'):
     expsdir = '/home/%s/Les/Experiments' % (username)
@@ -72,9 +81,9 @@ hornsrev = 'Hornsrev_wakeclouds'
 NHnbl = 'NorthHoyle_NBL'
 NHcbl = 'NorthHoyle_CBL'
 
-exptitle = [hornsrev,hornsrev] 
+exptitle = [hornsrev] 
 
-expnr = ['201', '203']
+expnr = ['212']
 
 labels = ['Stable', 'Neutral', 'Convective']
 
@@ -84,7 +93,7 @@ colorexp = ['#000000','#939393','#00A6D6','#939393','g', 'y', 'b']
 # time settings
 time_av = False
 t_start = [2*hour]
-t_end = [7*hour]
+t_end = [2*hour]
 
 #---------------------
 #     Properties
@@ -92,7 +101,7 @@ t_end = [7*hour]
 # wthvt = buoyancy flux; wthlt = total theta_l flux; thv = virtual pot. temp; thl = liq. pot. temp; w2r = vert. velocity variance; uwt/vwt = vertical momentum fluxes
 # tmser.nc: lwp_bar, zb, zc_av
 # Use wthvt instead of wthlt when no difference to get lowest level right
-prop = ['w2r']
+prop = ['winddir']
 
 normprop = False
 
@@ -220,6 +229,14 @@ for i,u in enumerate(exptitle):
                     datav = readprop(u,expnr[i],'v2r')
                     dataw = readprop(u,expnr[i],'w2r')
                     p = data['u2r']+datav['v2r']+dataw['w2r']
+                elif v == 'temp':
+                    data = readprop(u,expnr[i],'thl')
+                    datap = readprop(u,expnr[i],'presh')
+                    thl = data['thl']
+                    presh = datap['presh']
+                    p = np.zeros(np.shape(thl))
+                    for ii,vv in enumerate(thl[0,:]):
+                        p[:,ii] = (presh[:,ii]/p0)**(Rd/cp)*thl[:,ii]
                 else:
                     data = readprop(u,expnr[i],v)
                     p = data[v]

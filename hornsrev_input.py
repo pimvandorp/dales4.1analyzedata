@@ -68,8 +68,9 @@ def readprop(exptitle,expnr,prop,username='pim'):
 
     return {'zt' : zt, 'zm' : zm, 'time': time, prop:p} 
 
-
-
+inputprofs = np.loadtxt('/home/pim/Les/Experiments/Hornsrev_wakeclouds/211/prof.inp.211',skiprows=2)
+thl0 = inputprofs[:,1]
+qt0 = inputprofs[:,2]
 datain = np.loadtxt('/home/pim/dales4.1inputgen/hornsrev/radiosond_day.txt', skiprows=6)
 datanight = np.loadtxt('/home/pim/dales4.1inputgen/hornsrev/radiosond_night.txt', skiprows=6)
 
@@ -85,8 +86,8 @@ tempnight = datanight[:,2]
 relhnight = datanight[:,4]
 wsnight = datanight[:,7]
 
-tempmetmast = 273.16 + np.array([4,3.6])
-heightmetmast = np.array([16,64])
+tempmetmast = 273.16 + np.array([4.7,4,3.6])
+heightmetmast = np.array([0,16,64])
 
 cp = 1004.703 
 g = 9.81
@@ -97,14 +98,16 @@ p0 = 1.e5
 psurf = 1.037e5 
 
 Tsurf = 273.16+4.7
+Tsurf0 = 273.16+4.35
 csurf = ((psurf/p0)**(Rd/cp))
 thetasurf = Tsurf/csurf
+thetasurf0 = Tsurf0/csurf
 
 exptitle = 'Hornsrev_wakeclouds'
-expnr = ['203' , '206'] 
-
+expnr = ['211'] 
+colorprop = ['#000000','#939393','#00A6D6']
 marker = [ '-', ':','.-','-^']
-t_start = 2.5*hour
+t_start = 7800
 
 Tn = .8+273.16
 preshn = 96700
@@ -116,8 +119,12 @@ print qsatn
 # fit : 276.38
 height = np.arange(0,400,1)
 Tfit = []
+DA = []
+WA = []
 for i,v in enumerate(height):
     Tfit = np.append(Tfit,277.2-4.201e-3*v)
+    DA = np.append(DA,273.16+4.-0.0098*v)
+    WA = np.append(WA,273.16+4.-0.0056*v)
 
 for i,v in enumerate(expnr):
     if v == '936':
@@ -151,31 +158,34 @@ for i,v in enumerate(expnr):
         temperature = False
 
     if temperature:
-        T = np.append(Tsurf,T)
-        thl = np.append(thetasurf,thl)
-        zt = np.append(0,zt)
-        ax.plot(T,zt,'%sg' % marker[i],label='T (%s)' % v, zorder = 3)
-        ax.plot(thl,zt,'%sk' % marker[i],label='$\\theta_l$ (%s)' % v, zorder = 3)
+        ax.plot(T,zt,'-', color=colorprop[2], label='T (%s)' % v, zorder = 1)
+        ax.plot(thl,zt,'-', color=colorprop[0],label='$\\theta_l$ (%s)' % v, zorder = 1)
+        ax.plot(thl0,zt,':', color=colorprop[0],label='$\\theta_{l,0}',zorder = 0)
+        #ax.plot(DA,height,'b')
+        #ax.plot(WA,height,'b')
+        ax.plot(thetasurf,0,'.k',clip_on=False,zorder = 10)
+        ax.plot(thetasurf0,0,'.',  color=colorprop[0],clip_on=False,zorder = 10)
+        ax.plot(Tsurf,0,'.',color=colorprop[2],clip_on=False,zorder = 11)
+        #ax.plot(Tsurf0,0,'og',clip_on=False,zorder = 10)
         #ax.plot(273.16+tempasc[:6],heightasc[:6],'-dg',label = 'RS day')
-        #ax.plot(273.16+tempnight[:6],heightnight[:6],'-^g',label = 'RS')
-        ax.plot(274.991*csurf,0,'og',clip_on=False,zorder = 10)
-        ax.plot(273.16+4.7,0,'dr',clip_on=False, zorder = 10)
+        ax.plot(273.16+tempnight[:6],heightnight[:6], color=colorprop[1],label = 'RS')
         #ax.plot(Tfit,height,'y',label = 'Translated fit of RS')
-        ax.plot(tempmetmast,heightmetmast,'dr', label = 'Met. mast', zorder = 6)
+        ax.plot(tempmetmast,heightmetmast,'x', color=colorprop[1],label = 'Met. mast', zorder = 0, clip_on=False)
         ax.set_xlabel('Temperature $\mathrm{[K]}$')
         ax.set_ylabel('Height $\mathrm{[m]}$')
         ax.set_xticks(np.arange(274,279,1))
         ax.set_yticks(np.arange(50,250,50))
     else:
-        ax.plot(1000*qsat,zt,'%sg' % marker[i],label='$q_{\mathrm{sat}}$ (%s)' % v)
-        ax.plot(1000*qtsim,zt,'%sk' % marker[i],label='$q_{\mathrm{sim}}$ (%s)' % v)
+        ax.plot(1000*qsat,zt,'-',color=colorprop[2] ,label='$q_{\mathrm{sat}}$ (%s)' % v)
+        ax.plot(1000*qtsim,zt,color=colorprop[0],label='$q_{\mathrm{sim}}$ (%s)' % v)
+        ax.plot(1000*qt0,zt,':', color=colorprop[0],label='$q_{\mathrm{0}}$ (%s)' % v)
         #ax.plot(1000*qsat,zt,'g' ,label='$q_{\mathrm{sat}}$ (%s)' % v)
         #ax.plot(1000*qtsim,zt,'k' ,label='$q_{\mathrm{t}}$ (%s)' % v)
         #ax.plot(100000*qlsim,zt,'b',label='$10^3 \\times q_{l,\mathrm{sim}}$')
         ax.set_xlabel('Humidity $\mathrm{[g/kg]}$')
         ax.set_ylabel('Height $\mathrm{[m]}$')
-        plt.xlim(4.,5.5)
-        #ax.set_xticks(np.arange(4.,5.2,0.2))
+        plt.xlim(4.3,5)
+        ax.set_xticks(np.arange(4.4,5.,0.1))
         ax.set_yticks(np.arange(50,250,50))
 
 qt2h = 5.1e-3 - (5.1e-3-4.0e-3)*(1-np.exp(-1/100.*(zt)))
@@ -184,11 +194,11 @@ qt2h = 5.1e-3 - (5.1e-3-4.0e-3)*(1-np.exp(-1/100.*(zt)))
 ax.plot(ax.get_xlim(),[70,70],':k',zorder = 1, alpha = 0.5)
 ax.plot(ax.get_xlim(),[110,110],':k',zorder = 1, alpha = 0.5)
 ax.plot(ax.get_xlim(),[30,30],':k',zorder = 1, alpha = 0.5)
-plt.ylim(0,400)
-ax.legend(loc='upper right',frameon=False,fontsize = 8)
+plt.ylim(0,200)
+#ax.legend(loc='upper right',frameon=False,fontsize = 8)
 #plt.title('%s s after initialization' % t_start)
 
-save = False
+save = True
 if save:
     figuredir = '/home/%s/figures/profilesanalysis/hornsrev' % (username )
     if not os.path.isdir(figuredir):

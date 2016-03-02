@@ -16,10 +16,9 @@ def dgaus(x,a,x0,x1,sigma):
 def dgaus2(x,a,b,x0,x1,sigma):
     return a*np.exp(-(x-x0)**2/(2*sigma**2))+b*np.exp(-(x-x1)**2/(2*sigma**2))
 
-
 color = ['#000000','#939393','#00A6D6']
 
-presentation = True
+presentation = False
 save = True
 diag = False
 mpl.rcParams['font.size']=10.
@@ -32,7 +31,7 @@ a4height = 11.7
 a4width = 8.27
 margin = .7
 figwidth = (a4width-2*margin)/float(nsubfigures)
-figheight = figwidth
+figheight = 0.7*figwidth
 if presentation:
     def cm2inch(value):
         return value/2.54

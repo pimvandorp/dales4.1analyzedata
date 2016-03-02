@@ -43,11 +43,11 @@ Lv = 2.5008e6
 username = 'pim'
 
 exptitle = 'Hornsrev_wakeclouds'
-expnr = '301'
+expnr = '306'
 prop = 'ql'
 
 datadir = '/nfs/livedata/pim/fielddumpdata/%s/%s' % (exptitle,expnr)
-trange=[229,239]
+trange=[199,299]
 
 readnamopt = True
 if readnamopt:
@@ -95,13 +95,13 @@ else:
     filename = '%s_%s_%s_%s_%s.nc' % (exptitle, expnr,prop, trange[0],trange[1])
     datapath = datadir + '/%s' % (filename)
     f = pu.netcdf_file(datapath)
-    pfull = f.variables[prop][:,:,:]
+    pfull = f.variables[prop][:,:,:,:]
     x = f.variables['xt'][:]
     y = f.variables['yt'][:]
     #z = f.variables['zt'][:]
 
     #p = pfull[0,:,:]
-    p = np.sum(pfull[:,:,:],axis=0)
+    p = np.sum(pfull[0,:,:,:],axis=1)
 
 
 fig = plt.figure()

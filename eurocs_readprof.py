@@ -68,25 +68,16 @@ eurocs = 'Single_turbine_EUROCS'
 
 exptitle = [eurocs, eurocs]
 #expnr = ['400','402']
-expnr = ['410','420']
+expnr = ['450','461']
+
 
 label = ['Cloudy', 'Clear'] 
-marker = ['-', '-']
-colorexp = ['#000000','#00A6D6','#939393']
+marker = ['-', ':']
+colorexp = ['#00A6D6','#000000','#939393']
 
 # time settings
-day = False
-night = False
-if day:
-    t_start = 11*hour 
-    t_end = 12*hour
-elif night:
-    t_start = 23*hour 
-    t_end = 24*hour
-else: 
-    t_start = 0*hour 
-    t_end = 37*hour
-
+t_start = [11*hour, 23*hour] 
+t_end = [12*hour, 24*hour]
 
 #---------------------
 #     Properties
@@ -94,15 +85,15 @@ else:
 # wthvt = buoyancy flux; wthlt = total theta_l flux; thv = virtual pot. temp; thl = liq. pot. temp; w2r = vert. velocity variance; uwt/vwt = vertical momentum fluxes
 # tmser.nc: lwp_bar, zb, zc_av
 # Use wthvt instead of wthlt when no moist to get lowest level right
-prop = ['lwp_bar'] 
-#prop = ['w2r']
+#prop = ['lwp_bar'] 
+prop = ['wthvt']
 
 normprop = False
 
 #---------------------
 #   profiles.nc
 #---------------------
-readprof = False
+readprof = True
 
 timeseries = False
 height_av = False
@@ -124,13 +115,13 @@ if not readprof:
 #    Plot options
 #---------------------
 
-nsubfigures = 1
+nsubfigures = 2
 a4height = 11.7
 a4width = 8.27
 if nsubfigures == 1:
     margin = 2
 else:
-    margin = 0.7
+    margin = 1.5
 figwidth = (a4width-2*margin)/float(nsubfigures)
 if prop == 'lwp_bar': 
     figheight = figwidth/3.
@@ -153,15 +144,13 @@ ax = plt.subplot(111)
 fig.set_size_inches(figwidth,figheight)
 
 # Axes
-#ax.set_xlim((0,0.3))
-#ax.set_xlim((0,0.3))
-ax.set_xlim((0,37))
-#ax.set_ylim((0,zmax))
-ax.set_ylim((0,250))
+if prop[0] == 'w2r':
+    ax.set_xlim((0,0.3))
+    ax.set_ylim((0,zmax))
 
 # Labels
 if readprof:
-    ax.set_ylabel('$z \ \mathrm{[m]}$')
+    ax.set_ylabel('Height [m]')
     if prop[0] == 'w2r':
         ax.set_xlabel('$\mathrm{Vertical \ velocity \ variance} \ \mathrm{[m^2/s^2]}$')
     elif prop[0] == 'wthvt':
@@ -186,7 +175,7 @@ else:
     filename = 'tmser'
 for i,u in enumerate(prop):
     filename += '_%s'% u
-filename += '_%s_%s' % (int((t_start)/3600.), int((t_end)/3600.))
+filename += '_%s_%s' % (int((t_start[0])/3600.), int((t_end[0])/3600.))
 for i,u in enumerate(expnr):
     filename += '_%s' % u
     
@@ -201,62 +190,63 @@ ax.set_position([box.x0, box.y0,
 
 for i,u in enumerate(exptitle):
     for j,v in enumerate(prop):
-        if readprof:
-            if v == 'Vwt':
-                data = readprop(u,expnr[i],'uwt')
-                datavw = readprop(u,expnr[i],'vwt')
-                p = data['prop']+datavw['prop']
-            else:
-                data = readprop(u,expnr[i],v)
+        for t, tt in enumerate(t_start):
+            if readprof:
+                if v == 'Vwt':
+                    data = readprop(u,expnr[i],'uwt')
+                    datavw = readprop(u,expnr[i],'vwt')
+                    p = data['prop']+datavw['prop']
+                else:
+                    data = readprop(u,expnr[i],v)
+                    p = data['prop']
+
+                if v == 'wthvt' or v=='wthlt':
+                    th0 = readprop(u,expnr[i],'thl')['prop'][0]
+                    p = (9.81/th0)*p*10000
+
+                time = data['time']
+                t_start_in = find_nearest(time,t_start[t])
+                t_end_in = find_nearest(time,t_end[t])
+                time = time/3600.
+
+                zt = data['zt']
+                zm = data['zm']
+                if v == 'w2r' or v == 'uwt' or v == 'wthvt':
+                    z = zm 
+                else:
+                    z = zt
+
+                if timeseries:
+                    zmin_in = find_nearest(z,zmin)
+                    if height_av:
+                        zmax_in = find_nearest(z,zmax)
+                    else:
+                        zmax_in = zmin_in+1
+                        p = np.mean(p[:,zmin_in:zmax_in],axis=1)
+                        plt.plot(time,p[t_start_in:t_end_in])
+                elif zser:
+                    p = np.mean(p[t_start_in:t_end_in,:],axis=0)
+                    if normprop:
+                        p = p/np.amax(p)
+                    if trans:
+                        p = p - p[0]
+                    zmin_in = find_nearest(z,zmin)
+                    zmax_in = find_nearest(z,zmax)
+                    plt.plot(p[zmin_in:zmax_in],z[zmin_in:zmax_in],marker[t],color=colorexp[i],label=label[i], linewidth=0.8)
+            elif readtmser:
+                data = readproptmser(u,expnr[i],v)
+                time = data['time']
+                t_start_in = find_nearest(time,t_start[t])
+                t_end_in = find_nearest(time,t_end[t])
+                print t_start_in, t_end_in
+                time = time/3600.
+
                 p = data['prop']
 
-            if v == 'wthvt' or v=='wthlt':
-                th0 = readprop(u,expnr[i],'thl')['prop'][0]
-                p = (9.81/th0)*p*10000
+                if v=='lwp_bar':
+                    p = p*1000
 
-            time = data['time']
-            t_start_in = find_nearest(time,t_start)
-            t_end_in = find_nearest(time,t_end)
-            time = time/3600.
-
-            zt = data['zt']
-            zm = data['zm']
-            if v == 'w2r' or v == 'uwt' or v == 'wthvt':
-                z = zm 
-            else:
-                z = zt
-
-            if timeseries:
-                zmin_in = find_nearest(z,zmin)
-                if height_av:
-                    zmax_in = find_nearest(z,zmax)
-                else:
-                    zmax_in = zmin_in+1
-                    p = np.mean(p[:,zmin_in:zmax_in],axis=1)
-                    plt.plot(time,p[t_start_in:t_end_in])
-            elif zser:
-                p = np.mean(p[t_start_in:t_end_in,:],axis=0)
-                if normprop:
-                    p = p/np.amax(p)
-                if trans:
-                    p = p - p[0]
-                zmin_in = find_nearest(z,zmin)
-                zmax_in = find_nearest(z,zmax)
-                plt.plot(p[zmin_in:zmax_in],z[zmin_in:zmax_in],marker[i],color=colorexp[i],label=label[i], linewidth=0.8)
-        elif readtmser:
-            data = readproptmser(u,expnr[i],v)
-            time = data['time']
-            t_start_in = find_nearest(time,t_start)
-            t_end_in = find_nearest(time,t_end)
-            print t_start_in, t_end_in
-            time = time/3600.
-
-            p = data['prop']
-
-            if v=='lwp_bar':
-                p = p*1000
-
-            plt.plot(time[t_start_in:t_end_in],p[t_start_in:t_end_in],marker[i],color=colorexp[i],label=label[i],linewidth=0.8)
+                plt.plot(time[t_start_in:t_end_in],p[t_start_in:t_end_in],marker[t],color=colorexp[i],label=label[i],linewidth=0.8)
 
 if presentation:
     if day:
@@ -264,18 +254,22 @@ if presentation:
     elif night:
         plt.title('23.00-24.00')
 
-    #ax.set_xticks([0,0.1,0.2,0.3])
+    if prop[0] == 'w2r':
+        ax.set_xticks([0,0.1,0.2,0.3])
+        ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
     fontProperties = {'family':'sans-serif', 'size' : 10}
     ax.set_xticklabels(ax.get_xticks(), fontProperties)
     ax.set_yticklabels(ax.get_yticks(), fontProperties)
-    #ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
-    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.0f'))
     ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.0f'))
     #ax.legend(fontsize=8,frameon=False)#,loc=2)
 
-
-#ax.set_xticks(np.arange(0,0.35,0.05))
-ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.0f'))
+if prop[0] == 'w2r':
+    ax.set_xticks([0,0.1,0.2,0.3])
+    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
+if prop[0] == 'wthvt':
+    ax.set_xticks(np.arange(-6,10,2))
+    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.0f'))
+ax.set_yticks(np.arange(100,800,100))
 ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.0f'))
 
 if show:

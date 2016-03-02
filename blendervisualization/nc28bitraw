@@ -1,0 +1,5 @@
+#!/bin/bash
+#$ -l h_rt=100000
+
+python -u ./netcdf2blender8bitraw.py
+

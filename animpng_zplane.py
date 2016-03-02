@@ -25,18 +25,15 @@ if presentation:
 
 username = 'pim'
 
-exptitle = 'Hornsrev_wakeclouds'
-expnr = '303'
+#exptitle = 'Hornsrev_wakeclouds'
+exptitle = 'NorthHoyle_NBL'
+expnr = '102'
 
-dpi = 100
-fps = 7
-bitrate = -1
+prop = 'vhoravg' # property to be analysed (u,v,w,etc.)  
 
-prop = 'ql' # property to be analysed (u,v,w,etc.)  
-
-trange=[699,719]
+trange=[119,179]
 t_start_in=0
-t_end_in=trange[1] - trange[0] - 1
+t_end_in= trange[1] - trange[0] - 1
 
 nFrames = t_end_in-t_start_in
 print 'nFrames = ', nFrames
@@ -56,9 +53,12 @@ y = f.variables['yt'][:]/1000.
 fig = plt.figure()
 ax = plt.subplot(111)
 
-fig.set_size_inches(7,5)
+fig.set_size_inches(10,8)
 
-os.system('rm -r ./animtemp/*')
+tempdir = './animtemp/%s/%s' % (exptitle,expnr)
+if not os.path.isdir(tempdir):
+    os.makedirs(tempdir)
+os.system('rm -r ./%s/*' % (tempdir))
 
 fontProperties = {'family':'sans-serif', 'size' : 10}
 
@@ -78,9 +78,10 @@ for i in range(0,nFrames):
     levmin = np.amin(pfull[max(ii-10,0):min(ii+10,t_end_in),9:-9,9:-9])
     levmax = np.amax(pfull[max(ii-10,0):min(ii+10,t_end_in),9:-9,9:-9])
     levels = np.linspace(levmin,levmax,100)
-    cont = ax.contourf(x[9:-9],y[9:-9],z,levels,cmap = cm.Greys_r)
+    #cont = ax.contourf(x[9:-9],y[9:-9],z,levels,cmap = cm.Greys_r)
+    cont = ax.contourf(x[9:-9],y[9:-9],z,levels)
     print 'saving frame %s' % i
-    plt.savefig('animtemp/anim-%d.png' % (i+1) ,bbox_inches='tight',dpi=150)
+    plt.savefig(tempdir + '/anim-%d.png' % (i+1) ,dpi=200, bbox_inches='tight')
 
 figuredir = '/home/%s/animations/%s' % (username,exptitle)
 
@@ -92,9 +93,8 @@ tdy = dt.datetime.today()
 filename += tdy.strftime('%d%m_%H%M%S')
 figurepath = figuredir + '/%s.mp4' % (filename)
 
-os.system('ffmpeg -f image2 -r 7 -i \'animtemp/anim-%d.png\' -r 24 -vcodec copy animtemp/output.mp4')
-#os.system('ffmpeg -r 8 -i \'animtemp/anim-%d.png\' animtemp/output.gif')
-os.system('mv animtemp/output.mp4 %s' % figurepath )
+os.system('ffmpeg -framerate 7 -i \'' + tempdir + '/anim-%d.png\' -f mp4 -vcodec libx264 -pix_fmt yuv420p -vf scale=1920:-2 animtemp/output.mp4') 
+os.system('mv animtemp/output.mp4 %s' % (figurepath) )
     
 
     
